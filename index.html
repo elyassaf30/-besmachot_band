@@ -560,31 +560,32 @@ function showAdminBookedForm() {
     return;
   }
 
-  const password = prompt('הזן סיסמת מנהל:');
-  if (!password) return;
-
-  try {
-    const res = await fetch('/add-booked-date', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: dateValue, password })
-    });
-    const result = await res.json();
-    if (result.success) {
-      bookedDates.push(dateValue);
-      updateCalendarDisplay();
-      msgDiv.textContent = 'התאריך נוסף ונשמר בשרת!';
-      msgDiv.className = 'mt-4 text-sm text-green-300';
-      dateInput.value = '';
-    } else {
-      msgDiv.textContent = result.message || 'שגיאה';
-      msgDiv.className = 'mt-4 text-sm text-red-300';
-    }
-  } catch {
-    msgDiv.textContent = 'שגיאה בשרת';
-    msgDiv.className = 'mt-4 text-sm text-red-300';
+  if (bookedDates.includes(dateValue)) {
+    msgDiv.textContent = 'התאריך כבר מסומן כתפוס';
+    msgDiv.className = 'mt-4 text-sm text-yellow-300';
+    return;
   }
-});
+  // שלח לשרת (דוגמה: POST ל-endpoint)
+  fetch('/api/book-date', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date: dateValue })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error();
+    return res.json();
+  })
+  .then(data => {
+    bookedDates.push(dateValue);
+    updateCalendarDisplay();
+    msgDiv.textContent = 'התאריך נוסף בהצלחה!';
+    msgDiv.className = 'mt-4 text-sm text-green-300';
+    dateInput.value = '';
+  })
+  .catch(() => {
+    msgDiv.textContent = 'שגיאה בשמירת התאריך לשרת';
+    msgDiv.className = 'mt-4 text-sm text-red-300';
+  });
 
   }
 }
