@@ -549,42 +549,43 @@ function showAdminBookedForm() {
   // מאזין לטופס - הוספת תאריך גם ל-data.json (אם אפשר)
   const adminBookedForm = document.getElementById('adminBookedForm');
   if (adminBookedForm) {
-    adminBookedForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const dateInput = document.getElementById('adminBookedDate');
-      const dateValue = dateInput.value;
-      const msgDiv = document.getElementById('adminBookedMsg');
-      if (!dateValue) {
-        msgDiv.textContent = 'יש לבחור תאריך תקין';
-        msgDiv.className = 'mt-4 text-sm text-red-300';
-        return;
-      }
-      if (bookedDates.includes(dateValue)) {
-        msgDiv.textContent = 'התאריך כבר מסומן כתפוס';
-        msgDiv.className = 'mt-4 text-sm text-yellow-300';
-        return;
-      }
+    adminBookedForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const dateInput = document.getElementById('adminBookedDate');
+  const dateValue = dateInput.value;
+  const msgDiv = document.getElementById('adminBookedMsg');
+  if (!dateValue) {
+    msgDiv.textContent = 'יש לבחור תאריך תקין';
+    msgDiv.className = 'mt-4 text-sm text-red-300';
+    return;
+  }
+
+  const password = prompt('הזן סיסמת מנהל:');
+  if (!password) return;
+
+  try {
+    const res = await fetch('/add-booked-date', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: dateValue, password })
+    });
+    const result = await res.json();
+    if (result.success) {
       bookedDates.push(dateValue);
       updateCalendarDisplay();
-      // ניסיון לשלוח לשרת (אם יש API)
-      fetch('data.json', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookedDates })
-      }).then(res => {
-        if (res.ok) {
-          msgDiv.textContent = 'התאריך נוסף ונשמר בשרת!';
-          msgDiv.className = 'mt-4 text-sm text-green-300';
-        } else {
-          msgDiv.textContent = 'התאריך נוסף (לא נשמר לשרת, דמו בלבד)';
-          msgDiv.className = 'mt-4 text-sm text-yellow-300';
-        }
-      }).catch(() => {
-        msgDiv.textContent = 'התאריך נוסף (לא נשמר לשרת, דמו בלבד)';
-        msgDiv.className = 'mt-4 text-sm text-yellow-300';
-      });
+      msgDiv.textContent = 'התאריך נוסף ונשמר בשרת!';
+      msgDiv.className = 'mt-4 text-sm text-green-300';
       dateInput.value = '';
-    });
+    } else {
+      msgDiv.textContent = result.message || 'שגיאה';
+      msgDiv.className = 'mt-4 text-sm text-red-300';
+    }
+  } catch {
+    msgDiv.textContent = 'שגיאה בשרת';
+    msgDiv.className = 'mt-4 text-sm text-red-300';
+  }
+});
+
   }
 }
 
